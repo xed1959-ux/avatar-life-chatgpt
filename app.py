@@ -5,7 +5,12 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+api_key = os.environ.get("OPENAI_API_KEY")
+
+if not api_key:
+    print("ERROR: OPENAI_API_KEY is not set")
+
+client = OpenAI(api_key=api_key)
 
 MODEL = "gpt-5.6"
 
@@ -21,25 +26,36 @@ def chat():
         data = request.get_json(silent=True) or {}
         message = data.get("message", "").strip()
 
+        print("Received message:", message)
+
         if not message:
             return jsonify({
                 "error": "No message received."
             }), 400
+
+        print("Sending request to OpenAI...")
 
         response = client.responses.create(
             model=MODEL,
             input=message
         )
 
+        reply = response.output_text
+
+        print("OpenAI reply:", reply)
+
         return jsonify({
-            "reply": response.output_text
+            "reply": reply
         })
 
     except Exception as e:
-        print("ERROR:", str(e))
+        print("========== OPENAI ERROR ==========")
+        print(type(e).__name__)
+        print(str(e))
+        print("==================================")
 
         return jsonify({
-            "error": "OpenAI request failed."
+            "error": str(e)
         }), 500
 
 
