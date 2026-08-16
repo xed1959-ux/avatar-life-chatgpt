@@ -5,6 +5,7 @@ from google import genai
 
 app = Flask(__name__)
 
+# Gemini API key haetaan Renderin Environment Variables -asetuksesta.
 api_key = os.environ.get("GEMINI_API_KEY")
 
 if not api_key:
@@ -12,7 +13,7 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.5-flash-lite"
 
 
 @app.route("/")
@@ -35,12 +36,12 @@ def chat():
 
         print("Sending request to Gemini...")
 
-        response = client.models.generate_content(
+        interaction = client.interactions.create(
             model=MODEL,
-            contents=message
+            input=message
         )
 
-        reply = response.text
+        reply = interaction.output_text
 
         print("Gemini reply:", reply)
 
