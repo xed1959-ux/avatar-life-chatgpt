@@ -73,9 +73,9 @@ body {
 /* YLÄPALKKI */
 
 #header {
-    height: 42px;
-    min-height: 42px;
-    padding: 4px 9px;
+    height: 30px;
+    min-height: 30px;
+    padding: 2px 8px;
     background: #222;
     border-bottom: 1px solid #333;
 
@@ -94,14 +94,14 @@ body {
 }
 
 #status {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: normal;
     color: #888;
 }
 
 #newChat {
-    height: 27px;
-    padding: 0 9px;
+    height: 23px;
+    padding: 0 8px;
     border: 0;
     border-radius: 6px;
     background: #444;
@@ -165,10 +165,10 @@ body {
 /* ALAPALKKI */
 
 #inputArea {
-    height: 58px;
-    min-height: 58px;
+    height: 44px;
+    min-height: 44px;
 
-    padding: 7px 9px;
+    padding: 6px 8px;
 
     background: #222;
     border-top: 1px solid #333;
@@ -184,13 +184,13 @@ body {
     flex: 1;
 
     width: 100%;
-    height: 43px;
-    min-height: 43px;
-    max-height: 43px;
+    height: 31px;
+    min-height: 31px;
+    max-height: 31px;
 
     resize: none;
 
-    padding: 9px 11px;
+    padding: 5px 9px;
 
     border: 1px solid #444;
     border-radius: 7px;
@@ -212,8 +212,9 @@ body {
 /* LÄHETÄ */
 
 #sendButton {
-    width: 72px;
-    min-width: 72px;
+    width: 65px;
+    min-width: 65px;
+    height: 31px;
 
     border: 0;
     border-radius: 7px;
