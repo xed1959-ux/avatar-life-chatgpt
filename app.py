@@ -1,31 +1,36 @@
 import os
 import uuid
-
 from flask import Flask, request, jsonify, Response
 from google import genai
 
 app = Flask(__name__)
 
-# ---------------------------------------------------------
+# =========================================================
 # GEMINI
-# ---------------------------------------------------------
+# =========================================================
 
-api_key = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-if not api_key:
-    print("ERROR: GEMINI_API_KEY is not set")
+if not GEMINI_API_KEY:
+    raise RuntimeError("GEMINI_API_KEY puuttuu Renderin Environment Variables -asetuksista.")
 
-client = genai.Client(api_key=api_key)
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-MODEL = "gemini-3.5-flash-lite"
+MODEL = "gemini-3.5-flash"
 
+
+# =========================================================
+# KESKUSTELUMUISTI
+#
 # session_id -> viimeisin Gemini interaction ID
+# =========================================================
+
 sessions = {}
 
 
-# ---------------------------------------------------------
-# HTML CHAT INTERFACE
-# ---------------------------------------------------------
+# =========================================================
+# HTML-KÄYTTÖLIITTYMÄ
+# =========================================================
 
 HTML_PAGE = r"""
 <!DOCTYPE html>
@@ -34,10 +39,10 @@ HTML_PAGE = r"""
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
 
-<title>Avatar Life Gemini</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gemini</title>
 
 <style>
 
@@ -45,7 +50,8 @@ HTML_PAGE = r"""
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -57,15 +63,17 @@ html, body {
 
 body {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
 }
+
+
+/* =====================================================
+   KOKO CHAT
+   ===================================================== */
 
 #chat {
     width: 100%;
-    max-width: 900px;
     height: 100vh;
-    max-height: 100vh;
 
     display: flex;
     flex-direction: column;
@@ -73,91 +81,164 @@ body {
     background: #181818;
 }
 
+
+/* =====================================================
+   YLÄPALKKI
+   ===================================================== */
+
 #header {
-    padding: 14px 18px;
+    height: 42px;
+    min-height: 42px;
+
+    padding: 4px 9px;
 
     background: #222;
+
     border-bottom: 1px solid #333;
 
-    font-size: 20px;
-    font-weight: bold;
-
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#headerRight {
+    display: flex;
+    align-items: center;
+    gap: 7px;
 }
 
 #status {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: normal;
     color: #888;
 }
 
+#newChat {
+    height: 27px;
+    padding: 0 9px;
+
+    border: 0;
+    border-radius: 6px;
+
+    background: #444;
+    color: white;
+
+    font-size: 11px;
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   KESKIMMÄINEN KESKUSTELUALUE
+   ===================================================== */
+
 #messages {
     flex: 1;
+    min-height: 0;
+
     overflow-y: auto;
-    padding: 18px;
+
+    padding: 12px;
 
     display: flex;
     flex-direction: column;
-    gap: 14px;
+
+    gap: 10px;
 }
+
+
+/* =====================================================
+   VIESTIT
+   ===================================================== */
 
 .message {
     max-width: 85%;
-    padding: 11px 14px;
-    border-radius: 10px;
 
-    line-height: 1.45;
+    padding: 9px 12px;
+
+    border-radius: 8px;
+
+    line-height: 1.4;
+
     white-space: pre-wrap;
     word-wrap: break-word;
+
+    font-size: 15px;
 }
 
 .user {
     align-self: flex-end;
+
     background: #315b8a;
     color: white;
 }
 
 .gemini {
     align-self: flex-start;
+
     background: #292929;
+
     border: 1px solid #3a3a3a;
 }
 
 .system {
     align-self: center;
+
     color: #888;
-    font-size: 12px;
+
+    font-size: 11px;
+
     text-align: center;
 }
 
+
+/* =====================================================
+   ALAPALKKI
+   ===================================================== */
+
 #inputArea {
-    padding: 12px;
+    height: 58px;
+    min-height: 58px;
+
+    padding: 7px 9px;
+
     background: #222;
+
     border-top: 1px solid #333;
 
     display: flex;
-    gap: 8px;
+
+    gap: 7px;
 }
+
+
+/* =====================================================
+   TEKSTIKENTTÄ
+   ===================================================== */
 
 #messageInput {
     flex: 1;
 
-    min-height: 48px;
-    max-height: 140px;
+    width: 100%;
 
-    resize: vertical;
+    height: 43px;
+    min-height: 43px;
+    max-height: 43px;
 
-    padding: 12px;
+    resize: none;
+
+    padding: 9px 11px;
 
     border: 1px solid #444;
-    border-radius: 8px;
+    border-radius: 7px;
 
     background: #111;
     color: #eee;
 
-    font-size: 16px;
+    font-size: 15px;
     font-family: inherit;
 
     outline: none;
@@ -167,61 +248,108 @@ body {
     border-color: #666;
 }
 
-button {
-    border: none;
-    border-radius: 8px;
 
-    padding: 0 18px;
+/* =====================================================
+   LÄHETÄ
+   ===================================================== */
+
+#sendButton {
+    width: 72px;
+    min-width: 72px;
+
+    border: 0;
+    border-radius: 7px;
 
     background: #444;
     color: white;
 
-    font-size: 15px;
+    font-size: 13px;
+
     cursor: pointer;
 }
 
-button:hover {
+#sendButton:hover,
+#newChat:hover {
     background: #555;
 }
 
-button:disabled {
+#sendButton:disabled {
     background: #292929;
     color: #666;
     cursor: default;
 }
 
-#newChat {
-    padding: 7px 11px;
-    font-size: 12px;
+
+/* =====================================================
+   PIENET NÄYTÖT
+   ===================================================== */
+
+@media (max-width: 500px) {
+
+    #status {
+        display: none;
+    }
+
+    .message {
+        max-width: 92%;
+        font-size: 14px;
+    }
+
+    #sendButton {
+        width: 62px;
+        min-width: 62px;
+    }
 }
 
 </style>
 
 </head>
 
+
 <body>
 
 <div id="chat">
 
+
+    <!-- YLÄPALKKI -->
+
     <div id="header">
+
         <span>Gemini</span>
 
-        <div>
-            <span id="status">Valmis</span>
-            <button id="newChat">Uusi keskustelu</button>
+        <div id="headerRight">
+
+            <span id="status">
+                Valmis
+            </span>
+
+            <button id="newChat" type="button">
+                Uusi
+            </button>
+
         </div>
+
     </div>
 
+
+    <!-- SUURI KESKUSTELUALUE -->
+
     <div id="messages"></div>
+
+
+    <!-- ALAPALKKI -->
 
     <div id="inputArea">
 
         <textarea
             id="messageInput"
             placeholder="Kirjoita viesti..."
-            autocomplete="off"></textarea>
+            autocomplete="off"
+        ></textarea>
 
-        <button id="sendButton">Lähetä</button>
+        <button id="sendButton" type="button">
+            Lähetä
+        </button>
 
     </div>
 
@@ -230,38 +358,69 @@ button:disabled {
 
 <script>
 
-const messages = document.getElementById("messages");
-const input = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
-const newChatButton = document.getElementById("newChat");
-const statusText = document.getElementById("status");
+const messages =
+    document.getElementById("messages");
 
-const SESSION_KEY = "avatar_life_gemini_session";
+const input =
+    document.getElementById("messageInput");
 
-const INACTIVITY_LIMIT = 5 * 60 * 1000;
+const sendButton =
+    document.getElementById("sendButton");
 
-let sessionId = localStorage.getItem(SESSION_KEY);
+const newChatButton =
+    document.getElementById("newChat");
 
-let lastActivity = Date.now();
+const statusText =
+    document.getElementById("status");
 
 
-// ---------------------------------------------------------
-// MESSAGE DISPLAY
-// ---------------------------------------------------------
+/* =====================================================
+   SESSION
+   ===================================================== */
+
+const SESSION_KEY =
+    "avatar_life_gemini_session";
+
+let sessionId =
+    localStorage.getItem(SESSION_KEY);
+
+
+/* =====================================================
+   5 MINUUTIN AIKAKATKAISU
+   ===================================================== */
+
+const INACTIVITY_LIMIT =
+    5 * 60 * 1000;
+
+let lastActivity =
+    Date.now();
+
+
+/* =====================================================
+   VIESTIN LISÄYS
+   ===================================================== */
 
 function addMessage(text, type) {
 
-    const div = document.createElement("div");
+    const div =
+        document.createElement("div");
 
-    div.className = "message " + type;
+    div.className =
+        "message " + type;
 
-    div.textContent = text;
+    div.textContent =
+        text;
 
     messages.appendChild(div);
 
-    messages.scrollTop = messages.scrollHeight;
+    messages.scrollTop =
+        messages.scrollHeight;
 }
 
+
+/* =====================================================
+   SYSTEM-VIESTI
+   ===================================================== */
 
 function addSystemMessage(text) {
 
@@ -270,13 +429,14 @@ function addSystemMessage(text) {
 }
 
 
-// ---------------------------------------------------------
-// NEW SESSION
-// ---------------------------------------------------------
+/* =====================================================
+   UUSI SESSION
+   ===================================================== */
 
 function startNewSession() {
 
-    sessionId = crypto.randomUUID();
+    sessionId =
+        crypto.randomUUID();
 
     localStorage.setItem(
         SESSION_KEY,
@@ -289,32 +449,36 @@ function startNewSession() {
         "Uusi Gemini-keskustelu."
     );
 
-    lastActivity = Date.now();
+    lastActivity =
+        Date.now();
 
-    statusText.textContent = "Uusi keskustelu";
+    statusText.textContent =
+        "Valmis";
 
     input.focus();
 }
 
 
-// ---------------------------------------------------------
-// ACTIVITY
-// ---------------------------------------------------------
+/* =====================================================
+   AKTIIVISUUS
+   ===================================================== */
 
 function registerActivity() {
 
-    lastActivity = Date.now();
+    lastActivity =
+        Date.now();
 
 }
 
 
-// ---------------------------------------------------------
-// SEND MESSAGE
-// ---------------------------------------------------------
+/* =====================================================
+   VIESTIN LÄHETYS
+   ===================================================== */
 
 async function sendMessage() {
 
-    const message = input.value.trim();
+    const message =
+        input.value.trim();
 
     if (!message) {
         return;
@@ -322,35 +486,45 @@ async function sendMessage() {
 
     registerActivity();
 
-    addMessage(message, "user");
+    addMessage(
+        message,
+        "user"
+    );
 
     input.value = "";
 
     sendButton.disabled = true;
 
-    statusText.textContent = "Gemini vastaa...";
+    statusText.textContent =
+        "Gemini...";
+
 
     try {
 
-        const response = await fetch(
-            "/chat",
-            {
-                method: "POST",
+        const response =
+            await fetch(
+                "/chat",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    message: message
-                })
-            }
-        );
+                    body: JSON.stringify({
+                        session_id:
+                            sessionId,
+
+                        message:
+                            message
+                    })
+                }
+            );
 
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
 
         if (!response.ok) {
@@ -363,16 +537,15 @@ async function sendMessage() {
         }
 
 
-        // Jos palvelin antoi uuden session ID:n
         if (data.session_id) {
 
-            sessionId = data.session_id;
+            sessionId =
+                data.session_id;
 
             localStorage.setItem(
                 SESSION_KEY,
                 sessionId
             );
-
         }
 
 
@@ -383,8 +556,7 @@ async function sendMessage() {
 
 
         statusText.textContent =
-            "Yhteys toimii";
-
+            "Valmis";
 
         registerActivity();
 
@@ -393,27 +565,27 @@ async function sendMessage() {
     catch (error) {
 
         addSystemMessage(
-            "Virhe: " + error.message
+            "Virhe: " +
+            error.message
         );
 
         statusText.textContent =
             "Virhe";
-
     }
 
     finally {
 
-        sendButton.disabled = false;
+        sendButton.disabled =
+            false;
 
         input.focus();
-
     }
 }
 
 
-// ---------------------------------------------------------
-// BUTTON
-// ---------------------------------------------------------
+/* =====================================================
+   LÄHETÄ-PAINIKE
+   ===================================================== */
 
 sendButton.addEventListener(
     "click",
@@ -421,15 +593,20 @@ sendButton.addEventListener(
 );
 
 
+/* =====================================================
+   UUSI KESKUSTELU
+   ===================================================== */
+
 newChatButton.addEventListener(
     "click",
     startNewSession
 );
 
 
-// ---------------------------------------------------------
-// ENTER
-// ---------------------------------------------------------
+/* =====================================================
+   ENTER LÄHETTÄÄ
+   SHIFT+ENTER = RIVINVAIHTO
+   ===================================================== */
 
 input.addEventListener(
     "keydown",
@@ -443,71 +620,56 @@ input.addEventListener(
             event.preventDefault();
 
             sendMessage();
-
         }
 
     }
 );
 
 
-// ---------------------------------------------------------
-// ACTIVITY EVENTS
-// ---------------------------------------------------------
+/* =====================================================
+   AKTIIVISUUS
+   ===================================================== */
 
 input.addEventListener(
     "input",
     registerActivity
 );
 
-document.addEventListener(
-    "click",
-    registerActivity
-);
 
-
-// ---------------------------------------------------------
-// FIVE MINUTE TIMEOUT
-// ---------------------------------------------------------
+/* =====================================================
+   5 MINUUTIN AIKAKATKAISU
+   ===================================================== */
 
 setInterval(
     function() {
 
-        const elapsed =
-            Date.now() - lastActivity;
-
-
         if (
-            elapsed >=
+            sessionId &&
+            Date.now() - lastActivity >=
             INACTIVITY_LIMIT
         ) {
 
-            if (
-                sessionId !== null
-            ) {
+            sessionId = null;
 
-                sessionId = null;
+            localStorage.removeItem(
+                SESSION_KEY
+            );
 
-                localStorage.removeItem(
-                    SESSION_KEY
-                );
+            messages.innerHTML = "";
 
-                messages.innerHTML = "";
+            addSystemMessage(
+                "Yhteys suljettiin 5 minuutin käyttämättömyyden jälkeen."
+            );
 
-                addSystemMessage(
-                    "Yhteys suljettiin 5 minuutin käyttämättömyyden jälkeen."
-                );
+            addSystemMessage(
+                "Kirjoita viesti aloittaaksesi uuden keskustelun."
+            );
 
-                addSystemMessage(
-                    "Kirjoita uusi viesti aloittaaksesi uuden keskustelun."
-                );
+            statusText.textContent =
+                "Yhteys suljettu";
 
-                statusText.textContent =
-                    "Yhteys suljettu";
-
-            }
-
-            lastActivity = Date.now();
-
+            lastActivity =
+                Date.now();
         }
 
     },
@@ -515,15 +677,16 @@ setInterval(
 );
 
 
-// ---------------------------------------------------------
-// INITIALIZE
-// ---------------------------------------------------------
+/* =====================================================
+   KÄYNNISTYS
+   ===================================================== */
 
 if (!sessionId) {
 
     startNewSession();
 
 }
+
 else {
 
     addSystemMessage(
@@ -542,9 +705,9 @@ input.focus();
 """
 
 
-# ---------------------------------------------------------
-# HOME
-# ---------------------------------------------------------
+# =========================================================
+# ETUSIVU
+# =========================================================
 
 @app.route("/")
 def home():
@@ -555,24 +718,32 @@ def home():
     )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # CHAT
-# ---------------------------------------------------------
+# =========================================================
 
 @app.route("/chat", methods=["POST"])
 def chat():
 
     try:
 
-        data = request.get_json(
-            silent=True
-        ) or {}
+        data = request.get_json(silent=True)
 
-message = (data.get("message") or "").strip()
+        if not isinstance(data, dict):
+            data = {}
 
-        session_id = data.get(
-            "session_id",
-            ""
+
+        # -------------------------------------------------
+        # TÄRKEÄ:
+        # NoneType.strip -virhettä ei voi tulla.
+        # -------------------------------------------------
+
+        message = str(
+            data.get("message") or ""
+        ).strip()
+
+        session_id = str(
+            data.get("session_id") or ""
         ).strip()
 
 
@@ -587,19 +758,26 @@ message = (data.get("message") or "").strip()
         )
 
 
+        # -------------------------------------------------
+        # TYHJÄ VIESTI
+        # -------------------------------------------------
+
         if not message:
 
             return jsonify({
                 "error":
-                "No message received."
+                    "Viesti puuttuu."
             }), 400
 
 
+        # -------------------------------------------------
+        # LUODAAN SESSION TARVITTAESSA
+        # -------------------------------------------------
+
         if not session_id:
 
-            session_id = str(
-                uuid.uuid4()
-            )
+            session_id =
+                str(uuid.uuid4())
 
             print(
                 "Created new session:",
@@ -607,39 +785,56 @@ message = (data.get("message") or "").strip()
             )
 
 
-        previous_interaction_id = \
+        # -------------------------------------------------
+        # HAETAAN EDELLINEN INTERACTION
+        # -------------------------------------------------
+
+        previous_interaction =
             sessions.get(session_id)
 
 
         print(
             "Previous interaction:",
-            previous_interaction_id
+            previous_interaction
         )
 
 
-        if previous_interaction_id:
+        # -------------------------------------------------
+        # GEMINI
+        # -------------------------------------------------
 
-            interaction = \
+        if previous_interaction:
+
+            interaction =
                 client.interactions.create(
                     model=MODEL,
                     input=message,
                     previous_interaction_id=
-                        previous_interaction_id
+                        previous_interaction
                 )
 
         else:
 
-            interaction = \
+            interaction =
                 client.interactions.create(
                     model=MODEL,
                     input=message
                 )
 
 
-        reply = interaction.output_text
+        # -------------------------------------------------
+        # VASTAUS
+        # -------------------------------------------------
+
+        reply =
+            interaction.output_text
 
 
-        sessions[session_id] = \
+        # -------------------------------------------------
+        # TALLENNETAAN INTERACTION
+        # -------------------------------------------------
+
+        sessions[session_id] =
             interaction.id
 
 
@@ -655,12 +850,11 @@ message = (data.get("message") or "").strip()
 
 
         return jsonify({
-
-            "reply": reply,
+            "reply":
+                reply,
 
             "session_id":
                 session_id
-
         })
 
 
@@ -684,47 +878,43 @@ message = (data.get("message") or "").strip()
 
 
         return jsonify({
-
             "error":
                 str(e)
-
         }), 500
 
 
-# ---------------------------------------------------------
+# =========================================================
 # NEW SESSION
-# ---------------------------------------------------------
+# =========================================================
 
 @app.route(
     "/new_session",
     methods=["POST"]
 )
-def new_session():
+def create_new_session():
 
-    session_id = str(
-        uuid.uuid4()
-    )
+    session_id =
+        str(uuid.uuid4())
 
     return jsonify({
-
         "session_id":
             session_id
-
     })
 
 
-# ---------------------------------------------------------
-# START
-# ---------------------------------------------------------
+# =========================================================
+# KÄYNNISTYS
+# =========================================================
 
 if __name__ == "__main__":
 
-    port = int(
-        os.environ.get(
-            "PORT",
-            10000
+    port =
+        int(
+            os.environ.get(
+                "PORT",
+                "10000"
+            )
         )
-    )
 
     app.run(
         host="0.0.0.0",
