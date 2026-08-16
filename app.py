@@ -1,23 +1,23 @@
 import os
 
 from flask import Flask, request, jsonify
-from openai import OpenAI
+from google import genai
 
 app = Flask(__name__)
 
-api_key = os.environ.get("OPENAI_API_KEY")
+api_key = os.environ.get("GEMINI_API_KEY")
 
 if not api_key:
-    print("ERROR: OPENAI_API_KEY is not set")
+    print("ERROR: GEMINI_API_KEY is not set")
 
-client = OpenAI(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
-MODEL = "gpt-5.6"
+MODEL = "gemini-2.5-flash-lite"
 
 
 @app.route("/")
 def home():
-    return "Avatar Life ChatGPT server is running!"
+    return "Avatar Life Gemini server is running!"
 
 
 @app.route("/chat", methods=["POST"])
@@ -33,23 +33,23 @@ def chat():
                 "error": "No message received."
             }), 400
 
-        print("Sending request to OpenAI...")
+        print("Sending request to Gemini...")
 
-        response = client.responses.create(
+        response = client.models.generate_content(
             model=MODEL,
-            input=message
+            contents=message
         )
 
-        reply = response.output_text
+        reply = response.text
 
-        print("OpenAI reply:", reply)
+        print("Gemini reply:", reply)
 
         return jsonify({
             "reply": reply
         })
 
     except Exception as e:
-        print("========== OPENAI ERROR ==========")
+        print("========== GEMINI ERROR ==========")
         print(type(e).__name__)
         print(str(e))
         print("==================================")
