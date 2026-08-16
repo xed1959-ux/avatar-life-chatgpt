@@ -568,10 +568,7 @@ def chat():
             silent=True
         ) or {}
 
-        message = data.get(
-            "message",
-            ""
-        ).strip()
+message = (data.get("message") or "").strip()
 
         session_id = data.get(
             "session_id",
