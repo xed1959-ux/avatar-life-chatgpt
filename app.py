@@ -41,6 +41,8 @@ HTML_PAGE = r"""
 
 <style>
 
+<style>
+
 * {
     box-sizing: border-box;
 }
@@ -65,7 +67,6 @@ body {
     width: 100%;
     max-width: 900px;
     height: 100vh;
-    max-height: 100vh;
 
     display: flex;
     flex-direction: column;
@@ -73,13 +74,20 @@ body {
     background: #181818;
 }
 
+/* -------------------------
+   YLÄPALKKI
+   ------------------------- */
+
 #header {
-    padding: 14px 18px;
+    height: 42px;
+    min-height: 42px;
+
+    padding: 5px 10px;
 
     background: #222;
     border-bottom: 1px solid #333;
 
-    font-size: 20px;
+    font-size: 16px;
     font-weight: bold;
 
     display: flex;
@@ -88,76 +96,124 @@ body {
 }
 
 #status {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: normal;
     color: #888;
 }
 
+#newChat {
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+
+/* -------------------------
+   KESKUSTELUALUE
+   ------------------------- */
+
 #messages {
     flex: 1;
+
     overflow-y: auto;
-    padding: 18px;
+
+    padding: 12px;
 
     display: flex;
     flex-direction: column;
-    gap: 14px;
+
+    gap: 10px;
 }
+
+
+/* -------------------------
+   VIESTIT
+   ------------------------- */
 
 .message {
     max-width: 85%;
-    padding: 11px 14px;
-    border-radius: 10px;
 
-    line-height: 1.45;
+    padding: 9px 12px;
+
+    border-radius: 8px;
+
+    line-height: 1.4;
+
     white-space: pre-wrap;
     word-wrap: break-word;
 }
 
 .user {
     align-self: flex-end;
+
     background: #315b8a;
+
     color: white;
 }
 
 .gemini {
     align-self: flex-start;
+
     background: #292929;
+
     border: 1px solid #3a3a3a;
 }
 
 .system {
     align-self: center;
+
     color: #888;
-    font-size: 12px;
+
+    font-size: 11px;
+
     text-align: center;
 }
 
+
+/* -------------------------
+   ALAPALKKI
+   ------------------------- */
+
 #inputArea {
-    padding: 12px;
+    height: 58px;
+    min-height: 58px;
+
+    padding: 7px 9px;
+
     background: #222;
+
     border-top: 1px solid #333;
 
     display: flex;
-    gap: 8px;
+
+    gap: 7px;
 }
+
+
+/* -------------------------
+   TEKSTIKENTTÄ
+   ------------------------- */
 
 #messageInput {
     flex: 1;
 
-    min-height: 48px;
-    max-height: 140px;
+    min-height: 42px;
+    height: 42px;
+    max-height: 42px;
 
-    resize: vertical;
+    resize: none;
 
-    padding: 12px;
+    padding: 9px 11px;
 
     border: 1px solid #444;
-    border-radius: 8px;
+
+    border-radius: 7px;
 
     background: #111;
+
     color: #eee;
 
-    font-size: 16px;
+    font-size: 15px;
+
     font-family: inherit;
 
     outline: none;
@@ -167,16 +223,24 @@ body {
     border-color: #666;
 }
 
+
+/* -------------------------
+   LÄHETÄ-PAINIKE
+   ------------------------- */
+
 button {
     border: none;
-    border-radius: 8px;
 
-    padding: 0 18px;
+    border-radius: 7px;
+
+    padding: 0 14px;
 
     background: #444;
+
     color: white;
 
-    font-size: 15px;
+    font-size: 13px;
+
     cursor: pointer;
 }
 
@@ -186,14 +250,13 @@ button:hover {
 
 button:disabled {
     background: #292929;
+
     color: #666;
+
     cursor: default;
 }
 
-#newChat {
-    padding: 7px 11px;
-    font-size: 12px;
-}
+</style>
 
 </style>
 
