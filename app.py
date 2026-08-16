@@ -51,6 +51,7 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
+    overflow: hidden;
     background: #111;
     color: #eee;
     font-family: Arial, Helvetica, sans-serif;
@@ -63,7 +64,8 @@ body {
 
 #chat {
     width: 100%;
-    height: 100vh;
+    height: 100%;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     background: #181818;
@@ -73,9 +75,9 @@ body {
 /* YLÄPALKKI */
 
 #header {
-    height: 32px;
-    min-height: 32px;
-    padding: 4px 9px;
+    height: 10%;
+    min-height: 0;
+    padding: 2px 8px;
     background: #222;
     border-bottom: 1px solid #333;
 
@@ -114,7 +116,8 @@ body {
 /* KESKUSTELUALUE */
 
 #messages {
-    flex: 1;
+    height: 80%;
+    flex: none;
     min-height: 0;
 
     overflow-y: auto;
@@ -165,10 +168,10 @@ body {
 /* ALAPALKKI */
 
 #inputArea {
-    height: 46px;
-    min-height: 46px;
+    height: 10%;
+    min-height: 0;
 
-    padding: 7px 9px;
+    padding: 6px 8px;
 
     background: #222;
     border-top: 1px solid #333;
@@ -184,9 +187,9 @@ body {
     flex: 1;
 
     width: 100%;
-    height: 33px;
-    min-height: 33px;
-    max-height: 33px;
+    height: 43px;
+    min-height: 43px;
+    max-height: 43px;
 
     resize: none;
 
@@ -212,9 +215,8 @@ body {
 /* LÄHETÄ */
 
 #sendButton {
-    width: 65px;
-    min-width: 65px;
-    height: 33px;
+    width: 72px;
+    min-width: 72px;
 
     border: 0;
     border-radius: 7px;
